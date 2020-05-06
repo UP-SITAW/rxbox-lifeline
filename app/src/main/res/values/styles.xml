@@ -1,11 +1,54 @@
 <resources>
 
     <!-- Base application theme. -->
-    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+    <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <!-- Customize your theme here. -->
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
+
+        <item name="android:statusBarColor">@android:color/black</item>
+    </style>
+
+    <style name="TitleTextAppearance" parent="AppTheme">
+        <item name="fontFamily">@font/lato_regular</item>
+        <item name="android:textSize">30sp</item>
+    </style>
+
+    <style name="MonitorSecondaryStats" parent="AppTheme">
+        <item name="fontFamily">@font/lato_regular</item>
+        <item name="android:textSize">45sp</item>
+        <item name="android:textColor">@color/neonOthers</item>
+    </style>
+
+    <style name="MonitorSecondaryStatsTitle" parent="MonitorSecondaryStats">
+        <item name="android:textSize">24sp</item>
+    </style>
+
+    <style name="MonitorSecondaryStatsSubtitle" parent="MonitorSecondaryStats">
+        <item name="android:textSize">18sp</item>
+    </style>
+
+    <style name="MonitorPrimaryStats" parent="AppTheme">
+        <item name="fontFamily">@font/lato_regular</item>
+        <item name="android:textSize">72sp</item>
+        <item name="android:textColor">@color/neonOthers</item>
+    </style>
+
+    <style name="StartButtonAppearance" parent="AppTheme">
+        <item name="fontFamily">@font/lato_regular</item>
+        <item name="android:textSize">24sp</item>
+    </style>
+
+    <style name="ItemPatientName" parent="AppTheme">
+        <item name="fontFamily">@font/lato_regular</item>
+        <item name="android:textSize">20sp</item>
+        <item name="textAllCaps">true</item>
+    </style>
+
+    <style name="PatientListMessage" parent="AppTheme">
+        <item name="fontFamily">@font/lato_regular</item>
+        <item name="android:textSize">16sp</item>
     </style>
 
 </resources>

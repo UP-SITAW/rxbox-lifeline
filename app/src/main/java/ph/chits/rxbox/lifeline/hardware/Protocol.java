@@ -4,7 +4,7 @@ import com.hoho.android.usbserial.driver.UsbSerialPort;
 
 public class Protocol {
     public static final class Serial {
-        public static final int BAUDRATE = 256000;
+        public static final int BAUDRATE = 250000;
         public static final int DATABITS = 8;
         public static final int STOP_BITS = UsbSerialPort.STOPBITS_1; // 1 stop bit
         public static final int PARITY = UsbSerialPort.PARITY_NONE; // no parity
@@ -82,6 +82,14 @@ public class Protocol {
     public final static int ID_BP_STATUS_6 = 0x39;
 
     public final static int ID_FM = 0x40;
+
+    public final static char[] SET_ECG_DEFAULTS = {
+            SET_ECG_FILTER_TO_DIAGNOSIS,
+            SET_ECG_NOTCH_FILTER_TO_60HZ,
+            SET_ECG_GAIN_I_TO_ONE,
+            SET_ECG_GAIN_II_TO_ONE,
+            SET_TEMP_PROBE_TWO_K
+    };
 
     public static boolean isIdentifier(int r) {
         return (r & 0x80) == 0x00; // byte is identifier if bit 7 is 0

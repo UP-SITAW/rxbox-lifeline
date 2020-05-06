@@ -10,4 +10,8 @@ public class AtomicPseudoFloat extends AtomicInteger {
     public final float getFloat() {
         return Float.intBitsToFloat(super.get());
     }
+
+    public AtomicPseudoFloat(float initialValue) {
+        super(Float.floatToIntBits(initialValue));
+    }
 }

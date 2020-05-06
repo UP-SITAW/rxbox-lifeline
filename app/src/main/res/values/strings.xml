@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">Lifeline</string>
+
+    <string name="patient_queue_error">Unable to get the list. Please try again.</string>
+    <string name="patient_queue_empty">No patients found</string>
+
+    <string name="monitor_error_data_timeout">E1</string>
 </resources>

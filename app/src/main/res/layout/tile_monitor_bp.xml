@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    app:layout_constraintLeft_toLeftOf="@id/guide_column_secondary_stats"
+    app:layout_constraintTop_toTopOf="parent"
+    app:layout_constraintRight_toRightOf="parent">
+
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="NIBP"
+        android:textAppearance="@style/MonitorSecondaryStatsTitle"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent" />
+
+    <TextView
+        android:id="@+id/subtitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="mmHg"
+        android:textAppearance="@style/MonitorSecondaryStatsSubtitle"
+        app:layout_constraintTop_toBottomOf="@id/title"
+        app:layout_constraintLeft_toLeftOf="@id/title" />
+
+    <TextView
+        android:id="@+id/value"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:layout_marginBottom="4dp"
+        android:text="--/--"
+        android:textAppearance="@style/MonitorSecondaryStats"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/subtitle" />
+
+    <Button
+        android:id="@+id/start_stop"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="BP NOW"
+        app:layout_constraintTop_toBottomOf="@id/value"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:icon="@drawable/ic_play_arrow_24px"
+        app:iconTint="@color/neonOthers"
+        android:textColor="@color/neonOthers"
+        app:strokeColor="@color/neonOthersTransparent"
+        app:rippleColor="@color/neonOthersTransparent"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,6 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#6200EE</color>
-    <color name="colorPrimaryDark">#3700B3</color>
-    <color name="colorAccent">#03DAC5</color>
+    <color name="colorPrimary">#42a5f5</color>
+    <color name="colorPrimaryDark">#42a5f5</color>
+    <color name="colorAccent">#42a5f5</color>
+
+    <color name="bgDarkMonitor">#222222</color>
+    <color name="bgLightActivity">#fff</color>
+
+
+    <color name="neonEcg">#76db3d</color>
+    <color name="neonSpo2">#17eaf1</color>
+    <color name="neonRespiration">#f6f830</color>
+    <color name="neonOthers">#fdfdfd</color>
+
+    <color name="neonOthersTransparent">#1efdfdfd</color>
 </resources>

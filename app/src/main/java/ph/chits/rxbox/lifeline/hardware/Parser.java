@@ -86,11 +86,16 @@ public class Parser implements Runnable {
             if (Protocol.isIdentifier(r)) {
                 packet.clear().limit(Protocol.lengthOfPacket(r));
                 packet.put(r);
+                //Log.d(TAG, "packet id: "+ String.format("0x%02X", packet.limit() > 0 ? packet.get(0) : 0));
             } else {
                 packet.put(r);
             }
         } catch (BufferOverflowException e) { //drop the byte r if buffer overflows
-            //Log.d(TAG, "packet buffer ovf. packet: " + String.format("0x%02X", packet.get(0)) + ". limit: " + packet.limit());
+            if (packet.limit() > 0) {
+                //Log.d(TAG, "packet buffer ovf. packet: " + String.format("0x%02X", packet.get(0)) + ". limit: " + packet.limit());
+            } else {
+                //Log.d(TAG, "packet unidentified: " + String.format("0x%02X", r));
+            }
         }
 
         if ((!packet.hasRemaining()) && (packet.limit() > 0)) {
@@ -100,6 +105,7 @@ public class Parser implements Runnable {
                 case Protocol.ID_ECG_WAVEFORM_I_II_V1:
                     break;
                 case Protocol.ID_ECG_HEART_RATE_RESPIRATION_RATE:
+                    //Log.d(TAG, "recv ecg hr rr");
                     listener.setHeartRate((packet.get(3) << 8) | (packet.get(2)));
                     listener.setRespirationRate((packet.get(5) << 8) | (packet.get(4)));
                     break;
@@ -117,7 +123,7 @@ public class Parser implements Runnable {
                 case Protocol.ID_PULSE_OXIMETER:
                     listener.setPulseOxConnected((packet.get(4) & 0x08) == 0);
                     listener.setPulseRate(((packet.get(4) & 0x40) << 1) | (packet.get(5)));
-                    listener.setSpo2(packet.get(6));
+                    listener.setSpo2(packet.get(6) & 0x7F);
                     break;
                 case Protocol.ID_BP_END_CUFF_TX:
                 case Protocol.ID_BP_PART_1:

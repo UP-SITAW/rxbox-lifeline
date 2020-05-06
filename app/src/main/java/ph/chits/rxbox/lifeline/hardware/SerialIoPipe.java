@@ -3,6 +3,7 @@ package ph.chits.rxbox.lifeline.hardware;
 import android.util.Log;
 
 import com.hoho.android.usbserial.driver.UsbSerialPort;
+import com.hoho.android.usbserial.util.SerialInputOutputManager;
 
 import java.io.IOException;
 import java.io.PipedInputStream;
@@ -10,17 +11,32 @@ import java.io.PipedOutputStream;
 import java.nio.ByteBuffer;
 import java.util.concurrent.Executors;
 
-public class SerialIoPipe implements Runnable {
+public class SerialIoPipe implements Runnable, SerialInputOutputManager.Listener {
     private final String TAG = this.getClass().getSimpleName();
 
-    private final int READ_TIMEOUT_MILLIS = 100;
-    private final int WRITE_TIMEOUT_MILLIS = 100;
-    private final ByteBuffer readBuffer = ByteBuffer.allocate(8 * 1024); // affects how much to transfer from the usb endpoint. Max is 16k (driver limit)
+    private final int READ_TIMEOUT_MILLIS = 200;
+    private final int WRITE_TIMEOUT_MILLIS = 200;
+    private final ByteBuffer readBuffer = ByteBuffer.allocate(4 * 1024); // affects how much to transfer from the usb endpoint. Max is 16k (driver limit)
 
     private PipedInputStream rxInput, txInput;
     private PipedOutputStream rxOutput, txOutput;
 
     private UsbSerialPort port;
+    private SerialInputOutputManager usbIoManager;
+
+    @Override
+    public void onNewData(byte[] data) {
+        try {
+            rxOutput.write(data, 0, data.length);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void onRunError(Exception e) {
+
+    }
 
     private enum State {
         STOPPED,
@@ -63,6 +79,8 @@ public class SerialIoPipe implements Runnable {
     }
 
     public void start() {
+        //usbIoManager = new SerialInputOutputManager(port, this);
+        //Executors.newSingleThreadExecutor().submit(usbIoManager);
         Executors.newSingleThreadExecutor().execute(this);
     }
 
@@ -97,8 +115,11 @@ public class SerialIoPipe implements Runnable {
         int len = port.read(readBuffer.array(), READ_TIMEOUT_MILLIS);
         if (len > 0) {
             rxOutput.write(readBuffer.array(), 0, len); // writing to the pipe stream is blocking
+            rxOutput.flush();
             readBuffer.clear();
             //Log.d(TAG, "read " + len + ", pipe " + rxInput.available());
+        } else {
+            //Log.d(TAG, "read timed out");
         }
 
         int len2 = Math.min(txInput.available(), 32);
@@ -106,14 +127,6 @@ public class SerialIoPipe implements Runnable {
             byte[] toWrite = new byte[len2];
             len2 = txInput.read(toWrite, 0, len2);
             port.write(toWrite, WRITE_TIMEOUT_MILLIS);
-        }
-
-        if (len + len2 <= 0) {
-            try {
-                Thread.sleep(50);
-            } catch (InterruptedException e) {
-                Log.d(TAG, "sleep interrupted", e);
-            }
         }
     }
 }
