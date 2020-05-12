@@ -19,6 +19,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.textfield.TextInputEditText;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -58,9 +60,11 @@ public class SelectPatientActivity extends AppCompatActivity {
     private List<Call<ph.chits.rxbox.lifeline.rest.Patient>> patientDetailsCalls;
     CountDownLatch latch;
     List<String> patientIds;
+    private State state;
 
     private ProgressBar progressBar;
     private TextView textMessage;
+    private TextInputEditText searchField;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -97,8 +101,8 @@ public class SelectPatientActivity extends AppCompatActivity {
             }
         });
 
-        TextInputEditText search = findViewById(R.id.search_field);
-        search.addTextChangedListener(new TextWatcher() {
+        searchField = findViewById(R.id.search_field);
+        searchField.addTextChangedListener(new TextWatcher() {
             private Timer timer = new Timer();
             private final long DELAY = 500; // milliseconds
 
@@ -114,18 +118,21 @@ public class SelectPatientActivity extends AppCompatActivity {
 
             @Override
             public void afterTextChanged(final Editable editable) {
+                if (state != State.READING_PATIENT_DETAILS_SUCCESS) return;
                 timer.cancel();
                 timer = new Timer();
                 timer.schedule(
                         new TimerTask() {
                             @Override
                             public void run() {
+                                Log.d(TAG, "filtering");
                                 filteredPatients.clear();
                                 for (Patient p : patients) {
                                     if (p.getName().toLowerCase().contains(editable.toString().toLowerCase())) {
                                         filteredPatients.add(p);
                                     }
                                 }
+                                sort(filteredPatients);
                                 runOnUiThread(new Runnable() {
                                     @Override
                                     public void run() {
@@ -179,7 +186,6 @@ public class SelectPatientActivity extends AppCompatActivity {
                 Log.d(TAG, response.toString());
 
                 if (response.code() == 200) {
-                    Log.d(TAG, response.toString());
                     if (response.body() != null) {
                         readPatientDetails(response.body());
                     } else {
@@ -223,6 +229,8 @@ public class SelectPatientActivity extends AppCompatActivity {
                                 patients.add(patient);
                                 //filteredPatients.add(patient);
                                 //patientAdapter.notifyItemInserted(filteredPatients.size() - 1);
+
+                                Log.d(TAG, "got patient " + patient.getName() + " " + patient.getId());
 
                                 latch.countDown();
                                 updateUi(State.READING_PATIENT_DETAILS);
@@ -269,6 +277,7 @@ public class SelectPatientActivity extends AppCompatActivity {
     }
 
     private void updateUi(State state) {
+        this.state = state;
         switch (state) {
             case RESET:
                 patients.clear();
@@ -276,6 +285,7 @@ public class SelectPatientActivity extends AppCompatActivity {
                 patientAdapter.notifyDataSetChanged();
                 patientAdapter.clearSelected();
                 progressBar.setIndeterminate(true);
+                searchField.setText(null);
                 break;
             case READING_PATIENT_QUEUE:
                 progressBar.setVisibility(View.VISIBLE);
@@ -316,7 +326,18 @@ public class SelectPatientActivity extends AppCompatActivity {
                 break;
             case READING_PATIENT_DETAILS_SUCCESS:
                 filteredPatients.addAll(patients);
+                sort(filteredPatients);
                 patientAdapter.notifyDataSetChanged();
+                break;
         }
+    }
+
+    private void sort(List<Patient> patientList) {
+        Collections.sort(patientList, new Comparator<Patient>() {
+            @Override
+            public int compare(Patient one, Patient two) {
+                return one.getName().compareToIgnoreCase(two.getName());
+            }
+        });
     }
 }

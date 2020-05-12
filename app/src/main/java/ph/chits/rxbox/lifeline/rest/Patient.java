@@ -56,7 +56,7 @@ public class Patient {
             if (birthdate == null) return null;
             return simpleDateFormat.parse(birthdate);
         } catch (ParseException e) {
-            Log.d(TAG, "failed to parse birthdate " + birthdate, e);
+            Log.d(TAG, "failed to parse birthdate " + birthdate);
             return null;
         }
     }
