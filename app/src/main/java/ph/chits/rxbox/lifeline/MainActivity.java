@@ -103,6 +103,7 @@ public class MainActivity extends AppCompatActivity {
     private Runnable sendObservations = new Runnable() {
         @Override
         public void run() {
+            Log.d(TAG, "sending");
             int spo2 = serial.getData().getSpo2();
             if (spo2 > 100) spo2 = 0;
             fhirService.createObservation(new ObservationQuantity(
@@ -112,7 +113,7 @@ public class MainActivity extends AppCompatActivity {
                     new ObservationQuantity.Coding("59407-7", "loinc.org"),
                     String.format(Locale.US, "Patient/%s", patient.getId()),
                     StringUtils.formatISO(Calendar.getInstance().getTime()),
-                    new ObservationQuantity.ValueQuantity((float) spo2, "%", "http://unitsofmeasure.org")
+                    new ObservationQuantity.ValueQuantity((float) spo2, "%", "http://unitsofmeasure.org", "%")
             )).enqueue(new Callback<ObservationReport>() {
                 @Override
                 public void onResponse(Call<ObservationReport> call, Response<ObservationReport> response) {
@@ -134,7 +135,7 @@ public class MainActivity extends AppCompatActivity {
                     new ObservationQuantity.Coding("76270-8", "loinc.org"),
                     String.format(Locale.US, "Patient/%s", patient.getId()),
                     StringUtils.formatISO(Calendar.getInstance().getTime()),
-                    new ObservationQuantity.ValueQuantity((float) rr, "{Breaths}/min", "http://unitsofmeasure.org")
+                    new ObservationQuantity.ValueQuantity((float) rr, "{Breaths}/min", "http://unitsofmeasure.org", "Breaths / min")
             )).enqueue(new Callback<ObservationReport>() {
                 @Override
                 public void onResponse(Call<ObservationReport> call, Response<ObservationReport> response) {
@@ -156,7 +157,7 @@ public class MainActivity extends AppCompatActivity {
                     new ObservationQuantity.Coding("73799-9", "loinc.org"),
                     String.format(Locale.US, "Patient/%s", patient.getId()),
                     StringUtils.formatISO(Calendar.getInstance().getTime()),
-                    new ObservationQuantity.ValueQuantity((float) hr, "/min", "http://unitsofmeasure.org")
+                    new ObservationQuantity.ValueQuantity((float) hr, "/min", "http://unitsofmeasure.org", "BPM")
             )).enqueue(new Callback<ObservationReport>() {
                 @Override
                 public void onResponse(Call<ObservationReport> call, Response<ObservationReport> response) {
@@ -178,7 +179,7 @@ public class MainActivity extends AppCompatActivity {
                     new ObservationQuantity.Coding("8310-5", "loinc.org"),
                     String.format(Locale.US, "Patient/%s", patient.getId()),
                     StringUtils.formatISO(Calendar.getInstance().getTime()),
-                    new ObservationQuantity.ValueQuantity(temp, "Cel", "http://unitsofmeasure.org")
+                    new ObservationQuantity.ValueQuantity(temp, "Cel", "http://unitsofmeasure.org", "°C")
             )).enqueue(new Callback<ObservationReport>() {
                 @Override
                 public void onResponse(Call<ObservationReport> call, Response<ObservationReport> response) {
@@ -209,14 +210,6 @@ public class MainActivity extends AppCompatActivity {
                 StringUtils.parseISO(workPref.getString(getString(R.string.work_patient_birthdate), null))
         );
 
-        /*
-        Bundle extras = getIntent().getExtras();
-        if (extras != null) {
-            patient = new Patient(extras.getString("name", ""), extras.getString("id", ""), null, null);
-        }
-
-         */
-
         MaterialToolbar toolbar = findViewById(R.id.topAppBar);
         toolbar.setTitle(patient.getName().toUpperCase());
 
@@ -241,8 +234,9 @@ public class MainActivity extends AppCompatActivity {
 
         initializeTiles();
         serial.setup();
-        Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(updateMonitor, 0, 1, TimeUnit.SECONDS);
-        //Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(sendObservations, 0, 1, TimeUnit.SECONDS);
+        Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(updateMonitor, 2, 1, TimeUnit.SECONDS);
+        Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(sendObservations, 2, 1, TimeUnit.SECONDS);
+        //runOnUiThread(sendObservations);
     }
 
     private void initializeTiles() {

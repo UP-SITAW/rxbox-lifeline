@@ -1,5 +1,8 @@
 package ph.chits.rxbox.lifeline.rest;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class ObservationQuantity {
     String resourceType = "Observation";
     String id;
@@ -18,7 +21,8 @@ public class ObservationQuantity {
         this.status = status;
 
         this.code = new Code();
-        this.code.coding = coding;
+        this.code.coding = new ArrayList<>(1);
+        this.code.coding.add(coding);
 
         this.subject = new Subject();
         this.subject.reference = subject;
@@ -27,8 +31,8 @@ public class ObservationQuantity {
         this.valueQuantity = valueQuantity;
     }
 
-    public class Code {
-        Coding coding;
+    public static class Code {
+        List<Coding> coding;
     }
 
     public static class Coding {
@@ -51,13 +55,14 @@ public class ObservationQuantity {
         public ValueQuantity() {
         }
 
-        public ValueQuantity(Float value, String code, String system) {
+        public ValueQuantity(Float value, String code, String system, String unit) {
             this.value = value;
             this.code = code;
             this.system = system;
+            this.unit = unit;
         }
 
         Float value;
-        String code, system;
+        String code, system, unit;
     }
 }
