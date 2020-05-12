@@ -192,7 +192,7 @@ public class SelectPatientActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<PatientQueue> call, Throwable t) {
-                updateUi(State.READING_PATIENT_QUEUE_ERROR);
+                //updateUi(State.READING_PATIENT_QUEUE_ERROR);
                 Log.d(TAG, "failure", t);
             }
         });
@@ -240,7 +240,7 @@ public class SelectPatientActivity extends AppCompatActivity {
 
                     @Override
                     public void onFailure(Call<ph.chits.rxbox.lifeline.rest.Patient> call, Throwable t) {
-                        updateUi(State.READING_PATIENT_DETAILS_ERROR);
+                        //updateUi(State.READING_PATIENT_DETAILS_ERROR);
                     }
                 });
             }
