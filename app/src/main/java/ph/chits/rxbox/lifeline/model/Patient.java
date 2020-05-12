@@ -2,6 +2,8 @@ package ph.chits.rxbox.lifeline.model;
 
 import java.util.Date;
 
+import ph.chits.rxbox.lifeline.util.StringUtils;
+
 public class Patient {
     private String id, name, gender;
     private Date birthdate;
@@ -42,6 +44,10 @@ public class Patient {
 
     public Date getBirthdate() {
         return birthdate;
+    }
+
+    public String getBirthdateAsIso8601() {
+        return StringUtils.formatISO(getBirthdate());
     }
 
     public void setBirthdate(Date birthdate) {

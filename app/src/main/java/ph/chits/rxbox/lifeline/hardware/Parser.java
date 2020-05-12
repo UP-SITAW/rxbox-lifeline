@@ -121,7 +121,7 @@ public class Parser implements Runnable {
                 case Protocol.ID_ECG_LEAD_CONNECTIONS_INFO_2:
                     break;
                 case Protocol.ID_PULSE_OXIMETER:
-                    listener.setPulseOxConnected((packet.get(4) & 0x08) == 0);
+                    listener.setPulseOxConnected((packet.get(4) & 0x10) == 0);
                     listener.setPulseRate(((packet.get(4) & 0x40) << 1) | (packet.get(5)));
                     listener.setSpo2(packet.get(6) & 0x7F);
                     break;

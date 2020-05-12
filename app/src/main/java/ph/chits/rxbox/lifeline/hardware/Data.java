@@ -1,7 +1,5 @@
 package ph.chits.rxbox.lifeline.hardware;
 
-import android.util.Log;
-
 import java.util.Calendar;
 import java.util.Date;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -54,7 +52,7 @@ public class Data implements DataListener {
     @Override
     public void setHeartRate(int heartRate) {
         this.heartRate.set(new ObsQuantity<Integer>(heartRate, Calendar.getInstance().getTime()));
-        Log.d(TAG, "set hr " + heartRate);
+        //Log.d(TAG, "set hr " + heartRate);
     }
 
     @Override

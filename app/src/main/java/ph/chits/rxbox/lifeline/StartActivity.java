@@ -2,10 +2,16 @@ package ph.chits.rxbox.lifeline;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+
+import com.google.android.material.appbar.MaterialToolbar;
+
+import ph.chits.rxbox.lifeline.dialog.SetServer;
 
 public class StartActivity extends AppCompatActivity {
 
@@ -13,6 +19,20 @@ public class StartActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_start);
+
+        MaterialToolbar toolbar = findViewById(R.id.topAppBar);
+        toolbar.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                switch (item.getItemId()) {
+                    case R.id.server:
+                        openServerDialog();
+                        return true;
+                    default:
+                        return false;
+                }
+            }
+        });
     }
 
     @Override
@@ -31,5 +51,10 @@ public class StartActivity extends AppCompatActivity {
     void next() {
         Intent intent = new Intent(this, SelectPatientActivity.class);
         startActivity(intent);
+    }
+
+    void openServerDialog() {
+        SetServer setServer = new SetServer();
+        setServer.show(getSupportFragmentManager(), "setServer");
     }
 }

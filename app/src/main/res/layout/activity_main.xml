@@ -81,6 +81,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             layout="@layout/tile_monitor_bp"
+            android:visibility="gone"
             app:layout_constraintVertical_chainStyle="spread"
             app:layout_constraintLeft_toLeftOf="@id/guide_column_secondary_stats"
             app:layout_constraintRight_toRightOf="parent"

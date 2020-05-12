@@ -1,6 +1,8 @@
 package ph.chits.rxbox.lifeline;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -21,7 +23,7 @@ import ph.chits.rxbox.lifeline.model.Patient;
 import ph.chits.rxbox.lifeline.rest.FhirService;
 import ph.chits.rxbox.lifeline.rest.ObservationQuantity;
 import ph.chits.rxbox.lifeline.rest.ObservationReport;
-import ph.chits.rxbox.lifeline.util.StringFormatter;
+import ph.chits.rxbox.lifeline.util.StringUtils;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -109,7 +111,7 @@ public class MainActivity extends AppCompatActivity {
                     "final",
                     new ObservationQuantity.Coding("59407-7", "loinc.org"),
                     String.format(Locale.US, "Patient/%s", patient.getId()),
-                    StringFormatter.formatISO(Calendar.getInstance().getTime()),
+                    StringUtils.formatISO(Calendar.getInstance().getTime()),
                     new ObservationQuantity.ValueQuantity((float) spo2, "%", "http://unitsofmeasure.org")
             )).enqueue(new Callback<ObservationReport>() {
                 @Override
@@ -131,7 +133,7 @@ public class MainActivity extends AppCompatActivity {
                     "final",
                     new ObservationQuantity.Coding("76270-8", "loinc.org"),
                     String.format(Locale.US, "Patient/%s", patient.getId()),
-                    StringFormatter.formatISO(Calendar.getInstance().getTime()),
+                    StringUtils.formatISO(Calendar.getInstance().getTime()),
                     new ObservationQuantity.ValueQuantity((float) rr, "{Breaths}/min", "http://unitsofmeasure.org")
             )).enqueue(new Callback<ObservationReport>() {
                 @Override
@@ -153,7 +155,7 @@ public class MainActivity extends AppCompatActivity {
                     "final",
                     new ObservationQuantity.Coding("73799-9", "loinc.org"),
                     String.format(Locale.US, "Patient/%s", patient.getId()),
-                    StringFormatter.formatISO(Calendar.getInstance().getTime()),
+                    StringUtils.formatISO(Calendar.getInstance().getTime()),
                     new ObservationQuantity.ValueQuantity((float) hr, "/min", "http://unitsofmeasure.org")
             )).enqueue(new Callback<ObservationReport>() {
                 @Override
@@ -175,7 +177,7 @@ public class MainActivity extends AppCompatActivity {
                     "final",
                     new ObservationQuantity.Coding("8310-5", "loinc.org"),
                     String.format(Locale.US, "Patient/%s", patient.getId()),
-                    StringFormatter.formatISO(Calendar.getInstance().getTime()),
+                    StringUtils.formatISO(Calendar.getInstance().getTime()),
                     new ObservationQuantity.ValueQuantity(temp, "Cel", "http://unitsofmeasure.org")
             )).enqueue(new Callback<ObservationReport>() {
                 @Override
@@ -196,10 +198,24 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        SharedPreferences sharedPref = this.getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE);
+        String url = sharedPref.getString(getString(R.string.preference_server), null);
+
+        SharedPreferences workPref = this.getSharedPreferences(getString(R.string.work_file_key), Context.MODE_PRIVATE);
+        patient = new Patient(
+                workPref.getString(getString(R.string.work_patient_id), null),
+                workPref.getString(getString(R.string.work_patient_name), null),
+                workPref.getString(getString(R.string.work_patient_gender), null),
+                StringUtils.parseISO(workPref.getString(getString(R.string.work_patient_birthdate), null))
+        );
+
+        /*
         Bundle extras = getIntent().getExtras();
         if (extras != null) {
             patient = new Patient(extras.getString("name", ""), extras.getString("id", ""), null, null);
         }
+
+         */
 
         MaterialToolbar toolbar = findViewById(R.id.topAppBar);
         toolbar.setTitle(patient.getName().toUpperCase());
@@ -211,6 +227,12 @@ public class MainActivity extends AppCompatActivity {
                 navigateUpTo(intent);
             }
         });
+
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl(url)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+        fhirService = retrofit.create(FhirService.class);
     }
 
     @Override
@@ -218,16 +240,8 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
 
         initializeTiles();
-
         serial.setup();
         Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(updateMonitor, 0, 1, TimeUnit.SECONDS);
-
-        Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("http://206.189.87.169")
-                .addConverterFactory(GsonConverterFactory.create())
-                .build();
-        fhirService = retrofit.create(FhirService.class);
-
         //Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(sendObservations, 0, 1, TimeUnit.SECONDS);
     }
 

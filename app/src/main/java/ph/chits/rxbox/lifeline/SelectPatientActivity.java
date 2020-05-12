@@ -1,6 +1,8 @@
 package ph.chits.rxbox.lifeline;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -129,8 +131,11 @@ public class SelectPatientActivity extends AppCompatActivity {
             }
         });
 
+        SharedPreferences sharedPref = this.getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE);
+        String url = sharedPref.getString(getString(R.string.preference_server), null);
+
         Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("http://206.189.87.169")
+                .baseUrl(url)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
         fhirService = retrofit.create(FhirService.class);
@@ -260,9 +265,15 @@ public class SelectPatientActivity extends AppCompatActivity {
     }
 
     private void next(Patient patient) {
+        SharedPreferences sharedPref = this.getSharedPreferences(getString(R.string.work_file_key), Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putString(getString(R.string.work_patient_id), patient.getId());
+        editor.putString(getString(R.string.work_patient_name), patient.getName());
+        editor.putString(getString(R.string.work_patient_gender), patient.getGender());
+        editor.putString(getString(R.string.work_patient_birthdate), patient.getBirthdateAsIso8601());
+        editor.apply();
+
         Intent intent = new Intent(this, MainActivity.class);
-        intent.putExtra("name", patient.getName());
-        intent.putExtra("id", patient.getId());
         startActivity(intent);
     }
 }

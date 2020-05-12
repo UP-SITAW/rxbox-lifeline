@@ -1,5 +1,12 @@
 <resources>
     <string name="app_name">Lifeline</string>
+    <string name="preference_file_key">ph.chits.rxbox.lifeline.app_settings</string>
+    <string name="preference_server">server_uri</string>
+    <string name="work_file_key">ph.chits.rxbox.lifeline.current_work</string>
+    <string name="work_patient_id">patient_id</string>
+    <string name="work_patient_name">patient_name</string>
+    <string name="work_patient_gender">patient_gender</string>
+    <string name="work_patient_birthdate">patient_birthdate</string>
 
     <string name="patient_queue_error">Unable to get the list. Please try again.</string>
     <string name="patient_queue_empty">No patients found</string>
