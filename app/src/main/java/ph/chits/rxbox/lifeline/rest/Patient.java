@@ -53,6 +53,7 @@ public class Patient {
     public Date getBirthdate() {
         try {
             SimpleDateFormat simpleDateFormat = new SimpleDateFormat(BIRTHDATE_FORMAT, Locale.US);
+            if (birthdate == null) return null;
             return simpleDateFormat.parse(birthdate);
         } catch (ParseException e) {
             Log.d(TAG, "failed to parse birthdate " + birthdate, e);

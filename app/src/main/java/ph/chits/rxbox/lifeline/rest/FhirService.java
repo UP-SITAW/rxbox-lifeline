@@ -7,7 +7,7 @@ import retrofit2.http.POST;
 import retrofit2.http.Path;
 
 public interface FhirService {
-    @GET("Group/patient-que")
+    @GET("Group/patient-queue")
     Call<PatientQueue> readPatientQueue();
 
     @GET("Patient/{id}")
