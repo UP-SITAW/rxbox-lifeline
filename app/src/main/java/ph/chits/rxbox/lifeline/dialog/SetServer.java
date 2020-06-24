@@ -19,6 +19,8 @@ import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
 import ph.chits.rxbox.lifeline.R;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 public class SetServer extends DialogFragment {
     @NonNull
@@ -86,12 +88,20 @@ public class SetServer extends DialogFragment {
                 AlertDialog alertDialog = (AlertDialog) getDialog();
                 alertDialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(is_valid);
                 TextInputLayout textInputLayout = getDialog().findViewById(R.id.text_input_layout);
-                if (!is_valid) {
-
+                if (is_valid) {
+                    try {
+                        Retrofit retrofit = new Retrofit.Builder()
+                                .baseUrl(url)
+                                .addConverterFactory(GsonConverterFactory.create())
+                                .build();
+                        textInputLayout.setErrorEnabled(false);
+                    } catch (Exception e) {
+                        textInputLayout.setError("Must be a valid URL");
+                        textInputLayout.setErrorEnabled(true);
+                    }
+                } else {
                     textInputLayout.setError("Must be a valid URL");
                     textInputLayout.setErrorEnabled(true);
-                } else {
-                    textInputLayout.setErrorEnabled(false);
                 }
             }
         });

@@ -16,6 +16,7 @@ import com.google.android.material.appbar.MaterialToolbar;
 import java.util.Calendar;
 import java.util.Locale;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import ph.chits.rxbox.lifeline.hardware.Serial;
@@ -37,6 +38,8 @@ public class MainActivity extends AppCompatActivity {
     private FhirService fhirService;
 
     private Serial serial = new Serial(this);
+
+    private ScheduledFuture updatingFuture, sendingFuture;
 
     private Runnable updateMonitor = new Runnable() {
         @Override
@@ -103,94 +106,121 @@ public class MainActivity extends AppCompatActivity {
     private Runnable sendObservations = new Runnable() {
         @Override
         public void run() {
-            Log.d(TAG, "sending");
-            int spo2 = serial.getData().getSpo2();
-            if (spo2 > 100) spo2 = 0;
-            fhirService.createObservation(new ObservationQuantity(
-                    "Observation",
-                    String.format(Locale.US, "%11f", Math.random() * 10e6),
-                    "final",
-                    new ObservationQuantity.Coding("59407-7", "loinc.org"),
-                    String.format(Locale.US, "Patient/%s", patient.getId()),
-                    StringUtils.formatISO(Calendar.getInstance().getTime()),
-                    new ObservationQuantity.ValueQuantity((float) spo2, "%", "http://unitsofmeasure.org", "%")
-            )).enqueue(new Callback<ObservationReport>() {
-                @Override
-                public void onResponse(Call<ObservationReport> call, Response<ObservationReport> response) {
-                    Log.d(TAG, "created spo2 observation " + response.message());
-                }
+            try {
+                Log.d(TAG, "sending");
+                int spo2 = serial.getData().getSpo2();
+                if (spo2 > 100) spo2 = 0;
+                fhirService.createObservation(new ObservationQuantity(
+                        "Observation",
+                        String.format(Locale.US, "%11f", Math.random() * 10e6),
+                        "final",
+                        new ObservationQuantity.Coding("59407-7", "loinc.org"),
+                        String.format(Locale.US, "Patient/%s", patient.getId()),
+                        StringUtils.formatISO(Calendar.getInstance().getTime()),
+                        new ObservationQuantity.ValueQuantity((float) spo2, "%", "http://unitsofmeasure.org", "%")
+                )).enqueue(new Callback<ObservationReport>() {
+                    @Override
+                    public void onResponse(Call<ObservationReport> call, Response<ObservationReport> response) {
+                        Log.d(TAG, "created spo2 observation " + response.message());
+                    }
 
-                @Override
-                public void onFailure(Call<ObservationReport> call, Throwable t) {
-                    Log.d(TAG, "failed creating spo2 obs", t);
-                }
-            });
+                    @Override
+                    public void onFailure(Call<ObservationReport> call, Throwable t) {
+                        Log.d(TAG, "failed creating spo2 obs", t);
+                    }
+                });
 
-            int rr = serial.getData().getRespirationRate();
-            if (rr > 100) rr = 0;
-            fhirService.createObservation(new ObservationQuantity(
-                    "Observation",
-                    String.format(Locale.US, "%11f", Math.random() * 10e6),
-                    "final",
-                    new ObservationQuantity.Coding("76270-8", "loinc.org"),
-                    String.format(Locale.US, "Patient/%s", patient.getId()),
-                    StringUtils.formatISO(Calendar.getInstance().getTime()),
-                    new ObservationQuantity.ValueQuantity((float) rr, "{Breaths}/min", "http://unitsofmeasure.org", "Breaths / min")
-            )).enqueue(new Callback<ObservationReport>() {
-                @Override
-                public void onResponse(Call<ObservationReport> call, Response<ObservationReport> response) {
-                    Log.d(TAG, "created rr observation " + response.message());
-                }
+                int rr = serial.getData().getRespirationRate();
+                if (rr > 100) rr = 0;
+                fhirService.createObservation(new ObservationQuantity(
+                        "Observation",
+                        String.format(Locale.US, "%11f", Math.random() * 10e6),
+                        "final",
+                        new ObservationQuantity.Coding("76270-8", "loinc.org"),
+                        String.format(Locale.US, "Patient/%s", patient.getId()),
+                        StringUtils.formatISO(Calendar.getInstance().getTime()),
+                        new ObservationQuantity.ValueQuantity((float) rr, "{Breaths}/min", "http://unitsofmeasure.org", "Breaths / min")
+                )).enqueue(new Callback<ObservationReport>() {
+                    @Override
+                    public void onResponse(Call<ObservationReport> call, Response<ObservationReport> response) {
+                        Log.d(TAG, "created rr observation " + response.message());
+                    }
 
-                @Override
-                public void onFailure(Call<ObservationReport> call, Throwable t) {
-                    Log.d(TAG, "failed creating rr obs", t);
-                }
-            });
+                    @Override
+                    public void onFailure(Call<ObservationReport> call, Throwable t) {
+                        Log.d(TAG, "failed creating rr obs", t);
+                    }
+                });
 
-            int hr = serial.getData().getHeartRate();
-            if (hr > 100) hr = 0;
-            fhirService.createObservation(new ObservationQuantity(
-                    "Observation",
-                    String.format(Locale.US, "%11f", Math.random() * 10e6),
-                    "final",
-                    new ObservationQuantity.Coding("73799-9", "loinc.org"),
-                    String.format(Locale.US, "Patient/%s", patient.getId()),
-                    StringUtils.formatISO(Calendar.getInstance().getTime()),
-                    new ObservationQuantity.ValueQuantity((float) hr, "/min", "http://unitsofmeasure.org", "BPM")
-            )).enqueue(new Callback<ObservationReport>() {
-                @Override
-                public void onResponse(Call<ObservationReport> call, Response<ObservationReport> response) {
-                    Log.d(TAG, "created hr observation " + response.message());
-                }
+                int hr = serial.getData().getHeartRate();
+                if (hr > 250) hr = 0;
+                fhirService.createObservation(new ObservationQuantity(
+                        "Observation",
+                        String.format(Locale.US, "%11f", Math.random() * 10e6),
+                        "final",
+                        new ObservationQuantity.Coding("76282-3", "loinc.org"),
+                        String.format(Locale.US, "Patient/%s", patient.getId()),
+                        StringUtils.formatISO(Calendar.getInstance().getTime()),
+                        new ObservationQuantity.ValueQuantity((float) hr, "{Beats}/min", "http://unitsofmeasure.org", "Beats / minute")
+                )).enqueue(new Callback<ObservationReport>() {
+                    @Override
+                    public void onResponse(Call<ObservationReport> call, Response<ObservationReport> response) {
+                        Log.d(TAG, "created hr observation " + response.message());
+                    }
 
-                @Override
-                public void onFailure(Call<ObservationReport> call, Throwable t) {
-                    Log.d(TAG, "failed creating hr obs", t);
-                }
-            });
+                    @Override
+                    public void onFailure(Call<ObservationReport> call, Throwable t) {
+                        Log.d(TAG, "failed creating hr obs", t);
+                    }
+                });
 
-            float temp = serial.getData().getTemperature();
-            if (!serial.getData().isTempProbeConnected()) temp = 0;
-            fhirService.createObservation(new ObservationQuantity(
-                    "Observation",
-                    String.format(Locale.US, "%11f", Math.random() * 10e6),
-                    "final",
-                    new ObservationQuantity.Coding("8310-5", "loinc.org"),
-                    String.format(Locale.US, "Patient/%s", patient.getId()),
-                    StringUtils.formatISO(Calendar.getInstance().getTime()),
-                    new ObservationQuantity.ValueQuantity(temp, "Cel", "http://unitsofmeasure.org", "°C")
-            )).enqueue(new Callback<ObservationReport>() {
-                @Override
-                public void onResponse(Call<ObservationReport> call, Response<ObservationReport> response) {
-                    Log.d(TAG, "created temp observation " + response.message());
-                }
+                int pr = serial.getData().getPulseRate();
+                if (pr > 250) pr = 0;
+                fhirService.createObservation(new ObservationQuantity(
+                        "Observation",
+                        String.format(Locale.US, "%11f", Math.random() * 10e6),
+                        "final",
+                        new ObservationQuantity.Coding("8889-8", "loinc.org"),
+                        String.format(Locale.US, "Patient/%s", patient.getId()),
+                        StringUtils.formatISO(Calendar.getInstance().getTime()),
+                        new ObservationQuantity.ValueQuantity((float) pr, "{Beats}/min", "http://unitsofmeasure.org", "Beats / minute")
+                )).enqueue(new Callback<ObservationReport>() {
+                    @Override
+                    public void onResponse(Call<ObservationReport> call, Response<ObservationReport> response) {
+                        Log.d(TAG, "created hr observation " + response.message());
+                    }
 
-                @Override
-                public void onFailure(Call<ObservationReport> call, Throwable t) {
-                    Log.d(TAG, "failed creating temp obs", t);
-                }
-            });
+                    @Override
+                    public void onFailure(Call<ObservationReport> call, Throwable t) {
+                        Log.d(TAG, "failed creating hr obs", t);
+                    }
+                });
+
+                Log.d(TAG, "now=" + StringUtils.formatISO(Calendar.getInstance().getTime()));
+                float temp = serial.getData().getTemperature();
+                if (!serial.getData().isTempProbeConnected()) temp = 0;
+                fhirService.createObservation(new ObservationQuantity(
+                        "Observation",
+                        String.format(Locale.US, "%11f", Math.random() * 10e6),
+                        "final",
+                        new ObservationQuantity.Coding("8310-5", "loinc.org"),
+                        String.format(Locale.US, "Patient/%s", patient.getId()),
+                        StringUtils.formatISO(Calendar.getInstance().getTime()),
+                        new ObservationQuantity.ValueQuantity(temp, "Cel", "http://unitsofmeasure.org", "°C")
+                )).enqueue(new Callback<ObservationReport>() {
+                    @Override
+                    public void onResponse(Call<ObservationReport> call, Response<ObservationReport> response) {
+                        Log.d(TAG, "created temp observation " + response.message());
+                    }
+
+                    @Override
+                    public void onFailure(Call<ObservationReport> call, Throwable t) {
+                        Log.d(TAG, "failed creating temp obs", t);
+                    }
+                });
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     };
 
@@ -234,9 +264,23 @@ public class MainActivity extends AppCompatActivity {
 
         initializeTiles();
         serial.setup();
-        Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(updateMonitor, 2, 1, TimeUnit.SECONDS);
-        Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(sendObservations, 2, 1, TimeUnit.SECONDS);
+
+        cancelFuture();
+        updatingFuture = Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(updateMonitor, 2, 1, TimeUnit.SECONDS);
+        sendingFuture = Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(sendObservations, 2, 1, TimeUnit.SECONDS);
         //runOnUiThread(sendObservations);
+    }
+
+    @Override
+    protected void onStop() {
+        cancelFuture();
+
+        super.onStop();
+    }
+
+    private void cancelFuture() {
+        if (updatingFuture != null) updatingFuture.cancel(true);
+        if (sendingFuture != null) sendingFuture.cancel(true);
     }
 
     private void initializeTiles() {

@@ -2,6 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="ph.chits.rxbox.lifeline">
 
+    <uses-feature android:name="android.hardware.usb.host" />
+
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:allowBackup="false"
         android:icon="@drawable/ic_launcher_lifeline"
@@ -25,7 +29,5 @@
             android:name=".MainActivity"
             android:parentActivityName=".SelectPatientActivity" />
     </application>
-
-    <uses-feature android:name="android.hardware.usb.host" />
 
 </manifest>

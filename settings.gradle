@@ -1,2 +1,3 @@
 rootProject.name='Lifeline'
 include ':app'
+startParameter.offline=false
