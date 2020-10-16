@@ -23,7 +23,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-public class Serial {
+public class Serial implements ActionListener {
     private final String TAG = this.getClass().getSimpleName();
     private final String ACTION_USB_PERMISSION = "ph.chits.rxbox.lifeline";
 
@@ -98,14 +98,34 @@ public class Serial {
             port.open(connection);
             port.setParameters(250000, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE);
 
+            data.setSubscriber((Data.Subscriber) activity);
+
             serialIoPipe = new SerialIoPipe(port);
-            parser = new Parser(serialIoPipe.rx(), data);
+            parser = new Parser(serialIoPipe.rx(), data, this);
             parser.start();
             serialIoPipe.start();
 
             resetEcgSettings();
         } catch (IOException e) {
             Log.d(TAG, "IOException", e);
+        }
+    }
+
+    public void startBP() {
+        try {
+            serialIoPipe.tx().write(Protocol.BP_START_MEASUREMENT);
+            data.setBpIdle(false);
+        } catch (IOException e) {
+            Log.d(TAG, "failed to start BP measurement");
+        }
+    }
+
+    public void stopBP() {
+        try {
+            serialIoPipe.tx().write(Protocol.BP_ABORT);
+            data.setBpIdle(true);
+        } catch (IOException e) {
+            Log.d(TAG, "failed to abort BP measurement");
         }
     }
 
@@ -118,6 +138,15 @@ public class Serial {
             serialIoPipe.tx().write(Arrays.toString(Protocol.SET_ECG_DEFAULTS).getBytes());
         } catch (IOException e) {
             Log.d(TAG, "failed to reset ecg settings");
+        }
+    }
+
+    @Override
+    public void requestBpData() {
+        try {
+            serialIoPipe.tx().write(Protocol.BP_REQUEST_DATA);
+        } catch (IOException e) {
+            Log.d(TAG, "failed to request BP");
         }
     }
 }

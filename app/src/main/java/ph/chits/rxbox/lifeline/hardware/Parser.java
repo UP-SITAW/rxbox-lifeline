@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.PipedInputStream;
 import java.nio.BufferOverflowException;
 import java.nio.IntBuffer;
+import java.util.Arrays;
 import java.util.concurrent.Executors;
 
 public class Parser implements Runnable {
@@ -20,12 +21,15 @@ public class Parser implements Runnable {
     private State state = State.STOPPED;
     private PipedInputStream rx;
     private IntBuffer packet = IntBuffer.allocate(10);
+    private IntBuffer bp = IntBuffer.allocate(45);
 
     private DataListener listener;
+    private ActionListener actionListener;
 
-    public Parser(PipedInputStream rx, DataListener listener) {
+    public Parser(PipedInputStream rx, DataListener listener, ActionListener actionListener) {
         this.rx = rx;
         this.listener = listener;
+        this.actionListener = actionListener;
     }
 
     public synchronized State getState() {
@@ -126,20 +130,77 @@ public class Parser implements Runnable {
                     listener.setSpo2(packet.get(6) & 0x7F);
                     break;
                 case Protocol.ID_BP_END_CUFF_TX:
-                case Protocol.ID_BP_PART_1:
+                    //request data here
+                    Log.d(TAG, "requesting BP data");
+                    actionListener.requestBpData();
+                    break;
                 case Protocol.ID_BP_CUFF_TX_2:
+                    try {
+                        int cuff_pressure = intFromBuffer(bp, 1, 3);
+                        listener.setBpCuffPressure(cuff_pressure);
+                    } catch (NumberFormatException | IndexOutOfBoundsException e) {
+                        Log.d(TAG, "failed to read bp cuff pressure", e);
+                    }
+                    break;
+                case Protocol.ID_BP_PART_1:
+                    bp.clear();
                 case Protocol.ID_BP_STATUS_2:
                 case Protocol.ID_BP_STATUS_3:
                 case Protocol.ID_BP_STATUS_4:
                 case Protocol.ID_BP_STATUS_5:
+                    try {
+                        bp.put(Arrays.copyOfRange(packet.array(), 2, 9), 0, 7);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    break;
                 case Protocol.ID_BP_STATUS_6:
+                    try {
+                        bp.put(Arrays.copyOfRange(packet.array(), 2, 9), 0, 7);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    //bp array complete
+                    int m[] = bp.array();
+                    StringBuilder sb = new StringBuilder();
+                    for (int i : m) {
+                        sb.append((char) i);
+                    }
+                    Log.d(TAG, "bp string: " + sb.toString());
+                    String status2 = "" + (char) bp.get(2);
+                    String operation_mode = "" + (char) bp.get(5);
+                    int error = -1;
+                    try {
+                        error = intFromBuffer(bp, 21, 2);
+                        int p_systole = intFromBuffer(bp, 16, 3);
+                        int p_diastole = intFromBuffer(bp, 19, 3);
+                        int p_map = intFromBuffer(bp, 22, 3);
+                        //int bp_hr = intFromBuffer(bp, 27, 3);
+                        listener.setBpResult(p_systole, p_diastole, p_map);
+                    } catch (NumberFormatException | IndexOutOfBoundsException e) {
+                        Log.d(TAG, "failed to parse bp data", e);
+                        listener.setBpError(error);
+                    }
+                    break;
                 case Protocol.ID_FM:
                 default:
                     break;
 
             }
         }
+    }
 
+    private String strFromBuffer(IntBuffer buffer, int position, int length) {
+        int[] m = Arrays.copyOfRange(buffer.array(), position, position + length);
+        StringBuilder sb = new StringBuilder();
+        for (int i : m) {
+            sb.append((char) i);
+        }
+        return sb.toString();
+    }
+
+    private int intFromBuffer(IntBuffer buffer, int offset, int length) throws NumberFormatException {
+        return Integer.parseInt(strFromBuffer(buffer, offset, length));
     }
 
 

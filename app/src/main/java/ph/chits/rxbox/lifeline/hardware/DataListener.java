@@ -14,4 +14,12 @@ public interface DataListener {
     void setSpo2(int spo2);
 
     void setPulseOxConnected(boolean connected);
+
+    void setBpCuffPressure(int pressure);
+
+    void setBpError(int error);
+
+    void setBpResult(int systolic, int diastolic, int map);
+
+    void setBpIdle(boolean idle);
 }

@@ -3,9 +3,9 @@ package ph.chits.rxbox.lifeline;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -14,16 +14,24 @@ import androidx.core.content.res.ResourcesCompat;
 import com.google.android.material.appbar.MaterialToolbar;
 
 import java.util.Calendar;
+import java.util.Date;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import ph.chits.rxbox.lifeline.hardware.Data;
 import ph.chits.rxbox.lifeline.hardware.Serial;
 import ph.chits.rxbox.lifeline.model.Patient;
+import ph.chits.rxbox.lifeline.rest.Bundle;
+import ph.chits.rxbox.lifeline.rest.CustomDr;
+import ph.chits.rxbox.lifeline.rest.DeviceRequest;
 import ph.chits.rxbox.lifeline.rest.FhirService;
+import ph.chits.rxbox.lifeline.rest.ObservationBp;
 import ph.chits.rxbox.lifeline.rest.ObservationQuantity;
 import ph.chits.rxbox.lifeline.rest.ObservationReport;
+import ph.chits.rxbox.lifeline.rest.OnDemandBpRequest;
 import ph.chits.rxbox.lifeline.util.StringUtils;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -31,15 +39,24 @@ import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements Data.Subscriber {
     private final String TAG = getClass().getSimpleName();
+
+    private enum BpState {
+        IDLE, MEASURING
+    }
+
+    private BpState bpState = BpState.IDLE;
 
     private Patient patient = new Patient();
     private FhirService fhirService;
 
     private Serial serial = new Serial(this);
 
-    private ScheduledFuture updatingFuture, sendingFuture;
+    private ScheduledFuture updatingFuture, sendingFuture, settingsFuture, bpFuture;
+
+    private Integer bpInterval;
+    private Integer bpRequestId = null;
 
     private Runnable updateMonitor = new Runnable() {
         @Override
@@ -97,6 +114,26 @@ public class MainActivity extends AppCompatActivity {
                         viewRr.setText(String.format(Locale.US, "%d", rr));
                     } else {
                         viewRr.setText("0");
+                    }
+
+                    View tile = findViewById(R.id.tile_bp);
+                    TextView valueView = tile.findViewById(R.id.value);
+                    final Data.Bp bp = serial.getData().getBloodPressure();
+                    String bp_string = "--/--";
+                    String map_string = "";
+                    if (bp.getSystolic() != null && bp.getDiastolic() != null && bp.getMap() != null) {
+                        bp_string = String.format(Locale.US, "%d/%d", bp.getSystolic(), bp.getDiastolic());
+                        map_string = String.format(Locale.US, "(%d)", bp.getMap());
+                    }
+                    valueView.setText(bp_string);
+                    TextView mapView = tile.findViewById(R.id.map);
+                    mapView.setText(map_string);
+
+                    final boolean idle = serial.getData().isBpIdle();
+                    if (idle) {
+                        bpState = BpState.IDLE;
+                        Button button = findViewById(R.id.start_stop);
+                        button.setText("BP NOW");
                     }
                 }
             });
@@ -224,8 +261,149 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+    private Runnable readMonitoringSettings = new Runnable() {
+        @Override
+        public void run() {
+            try {
+                //Log.d(TAG, "patient id " + URLEncoder.encode("Patient/" + patient.getId(), "utf-8"));
+                fhirService.readMonitoringSettings("Patient/" + patient.getId()).enqueue(new Callback<CustomDr>() {
+                    @Override
+                    public void onResponse(Call<CustomDr> call, Response<CustomDr> response) {
+                        Log.d(TAG, "got readMonitoringSettings " + call.request().url() + " " + response.code());
+
+                        if (response.code() == 200) {
+                            if (response.body() != null) {
+                                Log.d(TAG, "response not null");
+                                CustomDr customDr = response.body();
+                                Bundle<DeviceRequest> deviceRequestBundle = customDr.dr;
+                                //Bundle<DeviceRequest> deviceRequestBundle = response.body();
+                                Log.d(TAG, "entries " + deviceRequestBundle.entry.size());
+                                for (DeviceRequest dr : deviceRequestBundle.entry) {
+                                    Log.d(TAG, "iterating " + dr.codeCodeableConcept.coding.get(0).code);
+                                    if (Objects.equals(dr.codeCodeableConcept.coding.get(0).code, "258057004")) {
+                                        SharedPreferences workPref = MainActivity.this.getSharedPreferences(getString(R.string.work_file_key), Context.MODE_PRIVATE);
+                                        SharedPreferences.Editor editor = workPref.edit();
+                                        editor.putInt(getString(R.string.work_bp_interval), dr.occurenceTiming.repeat.period);
+                                        editor.apply();
+
+                                        if (!Objects.equals(bpInterval, dr.occurenceTiming.repeat.period)) {
+                                            bpInterval = dr.occurenceTiming.repeat.period;
+
+                                            if (bpInterval != null && bpInterval > 0) {
+                                                bpRequestId = null;
+                                                if (bpFuture != null) bpFuture.cancel(true);
+                                                Log.d(TAG, "staring auto bp executor");
+                                                bpFuture = Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(autoBp, 2, bpInterval * 60, TimeUnit.SECONDS);
+                                            }
+                                        }
+
+                                        Log.d(TAG, "set bp interval " + dr.occurenceTiming.repeat.period);
+                                    } else {
+
+                                    }
+                                }
+
+                                for (OnDemandBpRequest bpRequest : customDr.bp) {
+
+                                    String pid = String.valueOf(bpRequest.rob_patientid);
+                                    if (pid.equals(patient.getId()) && (bpRequestId != null)) {
+                                        bpRequestId = bpRequest.rob_requestid;
+                                        Log.d(TAG, "bp triggered on demand");
+                                        autoBp.run();
+                                    }
+                                }
+
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<CustomDr> call, Throwable t) {
+                        Log.d(TAG, "failed getting readMonitoringSettings", t);
+                    }
+                });
+            } catch (Exception e) {
+                Log.e(TAG, "error reading monitoring setttings");
+                e.printStackTrace();
+            }
+        }
+    };
+
+    private Runnable autoBp = new Runnable() {
+        @Override
+        public void run() {
+            if (bpRequestId == null) {
+                Log.d(TAG, "auto bp skipped due to request");
+                return;
+            }
+            Log.d(TAG, "auto bp");
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    View tile = findViewById(R.id.tile_bp);
+                    Button button = tile.findViewById(R.id.start_stop);
+                    button.setText("STOP");
+                    Log.d(TAG, "auto bp start");
+                    try {
+                        serial.startBP();
+                        bpState = BpState.MEASURING;
+                    } catch (Exception e) {
+                        Log.d(TAG, "failed to auto bp", e);
+                    }
+                }
+            });
+
+        }
+    };
+
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void bpResult(Data.Bp bp, Date date) {
+        Log.d(TAG, "starting to send bp");
+        try {
+            Log.d(TAG, "sending bp");
+            fhirService.createObservation(new ObservationBp(
+                    "Observation",
+                    String.format(Locale.US, "%11f", Math.random() * 10e6),
+                    "final",
+                    new ObservationBp.Coding("85354-9", "loinc.org"),
+                    String.format(Locale.US, "Patient/%s", patient.getId()),
+                    StringUtils.formatISO(date),
+                    bp.getSystolic(),
+                    bp.getDiastolic(),
+                    bp.getMap()
+            )).enqueue(new Callback<ObservationReport>() {
+                @Override
+                public void onResponse(Call<ObservationReport> call, Response<ObservationReport> response) {
+                    Log.d(TAG, "created bp observation " + response.message());
+
+                    fhirService.acknowledgeRequestBp(bpRequestId, "1").enqueue(new Callback<String>() {
+                        @Override
+                        public void onResponse(Call<String> call, Response<String> response) {
+                            Log.d(TAG, "ack bp");
+                        }
+
+                        @Override
+                        public void onFailure(Call<String> call, Throwable t) {
+                            Log.d(TAG, "error ack bp");
+                        }
+                    });
+                    bpRequestId = null;
+                }
+
+                @Override
+                public void onFailure(Call<ObservationReport> call, Throwable t) {
+                    Log.d(TAG, "failed creating bp obs", t);
+                    bpRequestId = null;
+                }
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+            bpRequestId = null;
+        }
+    }
+
+    @Override
+    protected void onCreate(android.os.Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -267,8 +445,19 @@ public class MainActivity extends AppCompatActivity {
 
         cancelFuture();
         updatingFuture = Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(updateMonitor, 2, 1, TimeUnit.SECONDS);
-        sendingFuture = Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(sendObservations, 2, 1, TimeUnit.SECONDS);
+        sendingFuture = Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(sendObservations, 2, 5, TimeUnit.SECONDS);
+        settingsFuture = Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(readMonitoringSettings, 2, 30, TimeUnit.SECONDS);
+        if (bpInterval != null && bpInterval > 0) {
+            bpFuture = Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(autoBp, 2, bpInterval * 60, TimeUnit.SECONDS);
+        }
         //runOnUiThread(sendObservations);
+    }
+
+    @Override
+    protected void onPause() {
+        //serial.stopBP();
+
+        super.onPause();
     }
 
     @Override
@@ -281,6 +470,8 @@ public class MainActivity extends AppCompatActivity {
     private void cancelFuture() {
         if (updatingFuture != null) updatingFuture.cancel(true);
         if (sendingFuture != null) sendingFuture.cancel(true);
+        if (settingsFuture != null) settingsFuture.cancel(true);
+        if (bpFuture != null) bpFuture.cancel(true);
     }
 
     private void initializeTiles() {
@@ -336,5 +527,24 @@ public class MainActivity extends AppCompatActivity {
         TextView valueView = tile.findViewById(R.id.value);
         valueView.setText("--/--");
         valueView.setTextColor(color);
+        TextView mapView = tile.findViewById(R.id.map);
+        mapView.setText(null);
+        mapView.setTextColor(color);
+        final Button button = findViewById(R.id.start_stop);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (bpState == BpState.IDLE) {
+                    serial.startBP();
+                    bpState = BpState.MEASURING;
+                    button.setText("STOP");
+                } else {
+                    Log.d(TAG, "stopping bp from UI click");
+                    serial.stopBP();
+                    bpState = BpState.IDLE;
+                    button.setText("BP NOW");
+                }
+            }
+        });
     }
 }

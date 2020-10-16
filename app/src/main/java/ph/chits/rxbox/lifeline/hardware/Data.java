@@ -1,8 +1,11 @@
 package ph.chits.rxbox.lifeline.hardware;
 
+import android.util.Log;
+
 import java.util.Calendar;
 import java.util.Date;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class Data implements DataListener {
@@ -38,6 +41,32 @@ public class Data implements DataListener {
         }
     }
 
+    public static class Bp {
+        Integer systolic, diastolic, map;
+
+        public Bp(Integer systolic, Integer diastolic, Integer map) {
+            this.systolic = systolic;
+            this.diastolic = diastolic;
+            this.map = map;
+        }
+
+        public Integer getSystolic() {
+            return systolic;
+        }
+
+        public Integer getDiastolic() {
+            return diastolic;
+        }
+
+        public Integer getMap() {
+            return map;
+        }
+    }
+
+    public static interface Subscriber {
+        void bpResult(Bp bp, Date date);
+    }
+
     private final String TAG = this.getClass().getSimpleName();
 
     private final AtomicReference<ObsQuantity<Integer>> spo2 = new AtomicReference<>(new ObsQuantity<Integer>(null, Calendar.getInstance().getTime()));
@@ -46,8 +75,23 @@ public class Data implements DataListener {
     private final AtomicReference<ObsQuantity<Integer>> heartRate = new AtomicReference<>(new ObsQuantity<Integer>(null, Calendar.getInstance().getTime()));
     private final AtomicReference<ObsQuantity<Float>> temperature = new AtomicReference<>(new ObsQuantity<Float>(null, Calendar.getInstance().getTime()));
 
+    private final AtomicReference<ObsQuantity<Bp>> bp = new AtomicReference<>(new ObsQuantity<Bp>(new Bp(null, null, null), Calendar.getInstance().getTime()));
+    private final AtomicInteger cuffPressure = new AtomicInteger(0);
+    private final AtomicInteger bpError = new AtomicInteger(-1);
+    private final AtomicBoolean bpIdle = new AtomicBoolean(true);
+
     private final AtomicBoolean tempProbeConnected = new AtomicBoolean(false);
     private final AtomicBoolean pulseOxConnected = new AtomicBoolean(false);
+
+    private Subscriber subscriber;
+
+    public Subscriber getSubscriber() {
+        return subscriber;
+    }
+
+    public void setSubscriber(Subscriber subscriber) {
+        this.subscriber = subscriber;
+    }
 
     @Override
     public void setHeartRate(int heartRate) {
@@ -83,6 +127,35 @@ public class Data implements DataListener {
     @Override
     public void setPulseOxConnected(boolean connected) {
         this.pulseOxConnected.set(connected);
+    }
+
+    @Override
+    public void setBpCuffPressure(int pressure) {
+        cuffPressure.set(pressure);
+    }
+
+    @Override
+    public void setBpError(int error) {
+        this.bpError.set(error);
+        this.bpIdle.set(true);
+    }
+
+    @Override
+    public void setBpResult(int systolic, int diastolic, int map) {
+        Bp bp = new Bp(systolic, diastolic, map);
+        Date measured = Calendar.getInstance().getTime();
+        this.bp.set(new ObsQuantity<Bp>(bp, measured));
+        this.bpIdle.set(true);
+
+        if (subscriber != null) {
+            Log.d(TAG, "invoking bp result");
+            subscriber.bpResult(bp, measured);
+        }
+    }
+
+    @Override
+    public void setBpIdle(boolean idle) {
+        this.bpIdle.set(idle);
     }
 
     public Integer getHeartRate() {
@@ -127,6 +200,22 @@ public class Data implements DataListener {
 
     public boolean isRespirationRateRecent() {
         return respirationRate.get().isRecent();
+    }
+
+    public Bp getBloodPressure() {
+        return bp.get().getValue();
+    }
+
+    public int getBpError() {
+        return bpError.get();
+    }
+
+    public int getBpCuffPressure() {
+        return cuffPressure.get();
+    }
+
+    public boolean isBpIdle() {
+        return bpIdle.get();
     }
 
 }

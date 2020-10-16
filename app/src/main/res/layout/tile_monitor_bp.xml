@@ -26,6 +26,17 @@
         app:layout_constraintLeft_toLeftOf="@id/title" />
 
     <TextView
+        android:id="@+id/map"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:layout_marginBottom="4dp"
+        android:text="105"
+        android:textAppearance="@style/MonitorSecondaryStatsSubtitle"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/value" />
+
+    <TextView
         android:id="@+id/value"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -44,7 +55,6 @@
         app:layout_constraintTop_toBottomOf="@id/value"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:icon="@drawable/ic_play_arrow_24px"
         app:iconTint="@color/neonOthers"
         android:textColor="@color/neonOthers"
         app:strokeColor="@color/neonOthersTransparent"

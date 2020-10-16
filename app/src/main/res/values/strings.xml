@@ -7,6 +7,7 @@
     <string name="work_patient_name">patient_name</string>
     <string name="work_patient_gender">patient_gender</string>
     <string name="work_patient_birthdate">patient_birthdate</string>
+    <string name="work_bp_interval">bp_interval</string>
 
     <string name="patient_queue_error">Unable to get the list. Please try again.</string>
     <string name="patient_queue_empty">No patients found</string>
