@@ -33,6 +33,9 @@ public class StartActivity extends AppCompatActivity {
                     case R.id.server:
                         openServerDialog();
                         return true;
+                    case R.id.standalone:
+                        startStandaloneMode();
+                        return true;
                     default:
                         return false;
                 }
@@ -71,5 +74,11 @@ public class StartActivity extends AppCompatActivity {
     void openServerDialog() {
         SetServer setServer = new SetServer();
         setServer.show(getSupportFragmentManager(), "setServer");
+    }
+
+    void startStandaloneMode() {
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.putExtra("standalone", true);
+        startActivity(intent);
     }
 }

@@ -42,6 +42,8 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class MainActivity extends AppCompatActivity implements Data.Subscriber {
     private final String TAG = getClass().getSimpleName();
 
+    private boolean standaloneMode = false;
+
     private enum BpState {
         IDLE, MEASURING
     }
@@ -304,9 +306,9 @@ public class MainActivity extends AppCompatActivity implements Data.Subscriber {
                                 }
 
                                 for (OnDemandBpRequest bpRequest : customDr.bp) {
-
                                     String pid = String.valueOf(bpRequest.rob_patientid);
-                                    if (pid.equals(patient.getId()) && (bpRequestId != null)) {
+                                    Log.d(TAG, "bp on demand for " + pid);
+                                    if (pid.equals(patient.getId()) && (bpRequestId == null)) {
                                         bpRequestId = bpRequest.rob_requestid;
                                         Log.d(TAG, "bp triggered on demand");
                                         autoBp.run();
@@ -332,7 +334,7 @@ public class MainActivity extends AppCompatActivity implements Data.Subscriber {
     private Runnable autoBp = new Runnable() {
         @Override
         public void run() {
-            if (bpRequestId == null) {
+            if (bpRequestId != null) {
                 Log.d(TAG, "auto bp skipped due to request");
                 return;
             }
@@ -376,17 +378,21 @@ public class MainActivity extends AppCompatActivity implements Data.Subscriber {
                 public void onResponse(Call<ObservationReport> call, Response<ObservationReport> response) {
                     Log.d(TAG, "created bp observation " + response.message());
 
-                    fhirService.acknowledgeRequestBp(bpRequestId, "1").enqueue(new Callback<String>() {
-                        @Override
-                        public void onResponse(Call<String> call, Response<String> response) {
-                            Log.d(TAG, "ack bp");
-                        }
+                    try {
+                        fhirService.acknowledgeRequestBp(bpRequestId, "1").enqueue(new Callback<String>() {
+                            @Override
+                            public void onResponse(Call<String> call, Response<String> response) {
+                                Log.d(TAG, "ack bp");
+                            }
 
-                        @Override
-                        public void onFailure(Call<String> call, Throwable t) {
-                            Log.d(TAG, "error ack bp");
-                        }
-                    });
+                            @Override
+                            public void onFailure(Call<String> call, Throwable t) {
+                                Log.d(TAG, "error ack bp");
+                            }
+                        });
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                     bpRequestId = null;
                 }
 
@@ -407,16 +413,35 @@ public class MainActivity extends AppCompatActivity implements Data.Subscriber {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        SharedPreferences sharedPref = this.getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE);
-        String url = sharedPref.getString(getString(R.string.preference_server), null);
+        android.os.Bundle extras = getIntent().getExtras();
+        if (extras != null) {
+            standaloneMode = extras.getBoolean("standalone", false);
+        }
 
-        SharedPreferences workPref = this.getSharedPreferences(getString(R.string.work_file_key), Context.MODE_PRIVATE);
-        patient = new Patient(
-                workPref.getString(getString(R.string.work_patient_id), null),
-                workPref.getString(getString(R.string.work_patient_name), null),
-                workPref.getString(getString(R.string.work_patient_gender), null),
-                StringUtils.parseISO(workPref.getString(getString(R.string.work_patient_birthdate), null))
-        );
+        if (!standaloneMode) {
+            SharedPreferences sharedPref = this.getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE);
+            String url = sharedPref.getString(getString(R.string.preference_server), null);
+
+            Retrofit retrofit = new Retrofit.Builder()
+                    .baseUrl(url)
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .build();
+            fhirService = retrofit.create(FhirService.class);
+
+            SharedPreferences workPref = this.getSharedPreferences(getString(R.string.work_file_key), Context.MODE_PRIVATE);
+            patient = new Patient(
+                    workPref.getString(getString(R.string.work_patient_id), null),
+                    workPref.getString(getString(R.string.work_patient_name), null),
+                    workPref.getString(getString(R.string.work_patient_gender), null),
+                    StringUtils.parseISO(workPref.getString(getString(R.string.work_patient_birthdate), null))
+            );
+        } else {
+            patient = new Patient(
+                    "-100",
+                    "STANDALONE MODE",
+                    "", null
+            );
+        }
 
         MaterialToolbar toolbar = findViewById(R.id.topAppBar);
         toolbar.setTitle(patient.getName().toUpperCase());
@@ -428,12 +453,6 @@ public class MainActivity extends AppCompatActivity implements Data.Subscriber {
                 navigateUpTo(intent);
             }
         });
-
-        Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl(url)
-                .addConverterFactory(GsonConverterFactory.create())
-                .build();
-        fhirService = retrofit.create(FhirService.class);
     }
 
     @Override
@@ -445,10 +464,13 @@ public class MainActivity extends AppCompatActivity implements Data.Subscriber {
 
         cancelFuture();
         updatingFuture = Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(updateMonitor, 2, 1, TimeUnit.SECONDS);
-        sendingFuture = Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(sendObservations, 2, 5, TimeUnit.SECONDS);
-        settingsFuture = Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(readMonitoringSettings, 2, 30, TimeUnit.SECONDS);
-        if (bpInterval != null && bpInterval > 0) {
-            bpFuture = Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(autoBp, 2, bpInterval * 60, TimeUnit.SECONDS);
+
+        if (!standaloneMode) {
+            sendingFuture = Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(sendObservations, 2, 5, TimeUnit.SECONDS);
+            settingsFuture = Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(readMonitoringSettings, 2, 30, TimeUnit.SECONDS);
+            if (bpInterval != null && bpInterval > 0) {
+                bpFuture = Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(autoBp, 2, bpInterval * 60, TimeUnit.SECONDS);
+            }
         }
         //runOnUiThread(sendObservations);
     }
