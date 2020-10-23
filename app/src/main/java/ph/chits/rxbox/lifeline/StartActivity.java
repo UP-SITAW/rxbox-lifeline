@@ -61,6 +61,7 @@ public class StartActivity extends AppCompatActivity {
                     next();
                 } catch (Exception e) {
                     Toast.makeText(StartActivity.this, "Please set the Server URL", Toast.LENGTH_LONG).show();
+                    openServerDialog();
                 }
             }
         });

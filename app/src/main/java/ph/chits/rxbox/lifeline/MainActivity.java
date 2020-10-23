@@ -296,6 +296,10 @@ public class MainActivity extends AppCompatActivity implements Data.Subscriber {
                                                 if (bpFuture != null) bpFuture.cancel(true);
                                                 Log.d(TAG, "staring auto bp executor");
                                                 bpFuture = Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(autoBp, 2, bpInterval * 60, TimeUnit.SECONDS);
+                                            } else if( !(bpInterval > 0)) {
+                                                bpRequestId = null;
+                                                if (bpFuture != null) bpFuture.cancel(true);
+                                                Log.d(TAG, "cancelled auto bp");
                                             }
                                         }
 
