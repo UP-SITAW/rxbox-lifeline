@@ -312,10 +312,18 @@ public class MainActivity extends AppCompatActivity implements Data.Subscriber {
                                 for (OnDemandBpRequest bpRequest : customDr.bp) {
                                     String pid = String.valueOf(bpRequest.rob_patientid);
                                     Log.d(TAG, "bp on demand for " + pid);
-                                    if (pid.equals(patient.getId()) && (bpRequestId == null)) {
+                                    if (pid.equals(patient.getId()) && ((bpRequestId == null)) || ((bpRequestId != null) && !bpRequestId.equals(bpRequest.rob_requestid))) {
                                         bpRequestId = bpRequest.rob_requestid;
                                         Log.d(TAG, "bp triggered on demand");
-                                        autoBp.run();
+                                        View tile = findViewById(R.id.tile_bp);
+                                        Button button = tile.findViewById(R.id.start_stop);
+                                        button.setText("STOP");
+                                        try {
+                                            serial.startBP();
+                                            bpState = BpState.MEASURING;
+                                        } catch (Exception e) {
+                                            Log.d(TAG, "failed to trigger on demand bp", e);
+                                        }
                                     }
                                 }
 
