@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "320897382299",
+    "project_id": "rxbox-ef116",
+    "storage_bucket": "rxbox-ef116.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:320897382299:android:9b6d369a461f97be2d133e",
+        "android_client_info": {
+          "package_name": "ph.chits.rxbox.lifeline"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "320897382299-0gemp0fav8foucbb47m9pdruh9qdl0gc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBi4MSYUTUVlhe2d43019lVVmh38seR_bU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "320897382299-0gemp0fav8foucbb47m9pdruh9qdl0gc.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
