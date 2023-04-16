@@ -22,4 +22,11 @@ public interface DataListener {
     void setBpResult(int systolic, int diastolic, int map);
 
     void setBpIdle(boolean idle);
+
+    void setFetalHeartRate(int fhr);
+
+    void setTocometerPressure(int tmPressure);
+
+    void setMarkPressed(boolean pressed);
+
 }
