@@ -9,6 +9,7 @@ import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
 import android.util.Log;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -23,16 +24,20 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-public class Serial implements ActionListener {
+public class Serial implements ActionListener, AutoCloseable {
     private final String TAG = this.getClass().getSimpleName();
     private final String ACTION_USB_PERMISSION = "ph.chits.rxbox.lifeline";
 
     private AppCompatActivity activity;
+
+    private UsbDeviceConnection connection;
     private UsbSerialPort port;
 
     private SerialIoPipe serialIoPipe;
     private Parser parser;
     private final Data data = new Data();
+
+    private boolean connected = false;
 
     public Serial(AppCompatActivity activity) {
         this.activity = activity;
@@ -65,6 +70,7 @@ public class Serial implements ActionListener {
         UsbManager manager = (UsbManager) activity.getSystemService(Context.USB_SERVICE);
         if (manager == null) {
             Log.e(TAG, "device has no usb service");
+            Toast.makeText(activity.getApplicationContext(), "RxBox isn't running: No USB permission", Toast.LENGTH_LONG).show();
             return;
         }
 
@@ -76,13 +82,14 @@ public class Serial implements ActionListener {
 
         if (availableDrivers.isEmpty()) {
             Log.d(TAG, "no available drivers");
+            Toast.makeText(activity.getApplicationContext(), "RxBox isn't running: Can't find device driver", Toast.LENGTH_LONG).show();
             return;
         }
 
         // Open a connection to the first available driver.
         UsbSerialDriver driver = availableDrivers.get(0);
-        UsbDeviceConnection connection = manager.openDevice(driver.getDevice());
-        if (connection == null) {
+        this.connection = manager.openDevice(driver.getDevice());
+        if (this.connection == null) {
             // add UsbManager.requestPermission(driver.getDevice(), ..) handling here
 
             PendingIntent permissionIntent = PendingIntent.getBroadcast(activity, 0, new Intent(ACTION_USB_PERMISSION), 0);
@@ -90,43 +97,93 @@ public class Serial implements ActionListener {
             activity.registerReceiver(usbPermissionReceiver, filter);
             manager.requestPermission(driver.getDevice(), permissionIntent);
             Log.d(TAG, "connection null");
+            Toast.makeText(activity.getApplicationContext(), "RxBox isn't running: Can't open USB Connection", Toast.LENGTH_LONG).show();
             return;
         }
 
         port = driver.getPorts().get(0); // Most devices have just one port (port 0)
         try {
+
             port.open(connection);
             port.setParameters(250000, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE);
-
             data.setSubscriber((Data.Subscriber) activity);
-
             serialIoPipe = new SerialIoPipe(port);
             parser = new Parser(serialIoPipe.rx(), data, this);
             parser.start();
             serialIoPipe.start();
-
             resetEcgSettings();
+            this.connected = true;
+
         } catch (IOException e) {
             Log.d(TAG, "IOException", e);
         }
+
+        if (this.connected) {
+            Toast.makeText(activity.getApplicationContext(), "RxBox is connected", Toast.LENGTH_LONG).show();
+        } else {
+            Toast.makeText(activity.getApplicationContext(), "RxBox isn't running", Toast.LENGTH_LONG).show();
+        }
+
     }
 
-    public void startBP() {
-        try {
-            serialIoPipe.tx().write(Protocol.BP_START_MEASUREMENT);
-            data.setBpIdle(false);
-        } catch (IOException e) {
-            Log.d(TAG, "failed to start BP measurement");
-        }
+    @Override
+    public void close() throws Exception {
+
+        if (this.parser != null)
+            this.parser.stop();
+
+        if (this.serialIoPipe != null)
+            this.serialIoPipe.stop();
+
+        if (this.port != null)
+            this.port.close();
+
+        if (this.connection != null)
+            this.connection.close();
+
     }
 
-    public void stopBP() {
-        try {
-            serialIoPipe.tx().write(Protocol.BP_ABORT);
-            data.setBpIdle(true);
-        } catch (IOException e) {
-            Log.d(TAG, "failed to abort BP measurement");
+    public boolean startBP() {
+        if (!this.connected) {
+            Toast.makeText(activity.getApplicationContext(), "RxBox is turned off", Toast.LENGTH_LONG).show();
+        } else {
+            try {
+                serialIoPipe.tx().write(Protocol.BP_START_MEASUREMENT);
+                data.setBpIdle(false);
+                return true;
+            } catch (IOException e) {
+                Log.d(TAG, "failed to start BP measurement");
+            }
         }
+        return false;
+    }
+
+    public boolean stopBP() {
+        if (!this.connected) {
+            Toast.makeText(activity.getApplicationContext(), "RxBox is turned off", Toast.LENGTH_LONG).show();
+        } else {
+            try {
+                serialIoPipe.tx().write(Protocol.BP_ABORT);
+                data.setBpIdle(true);
+                return true;
+            } catch (IOException e) {
+                Log.d(TAG, "failed to abort BP measurement");
+            }
+        }
+        return false;
+    }
+
+    public boolean resetTocoToZero() {
+        if (!this.connected) {
+            Toast.makeText(activity.getApplicationContext(), "RxBox is turned off", Toast.LENGTH_LONG).show();
+        } else {
+            try {
+                serialIoPipe.tx().write(Protocol.FM_RESET_TOCO_ZERO);
+            } catch (IOException e) {
+                Log.d(TAG, "failed to reset Toco measurement");
+            }
+        }
+        return false;
     }
 
     public Data getData() {
@@ -149,4 +206,9 @@ public class Serial implements ActionListener {
             Log.d(TAG, "failed to request BP");
         }
     }
+
+    public boolean isConnected() {
+        return connected;
+    }
+
 }
