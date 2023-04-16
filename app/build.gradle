@@ -27,6 +27,7 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+    namespace 'ph.chits.rxbox.lifeline'
 
 }
 
@@ -34,7 +35,7 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
     //implementation 'com.github.mrnivlac:usb-serial-for-android:v2.2.3'
-    implementation 'com.github.mik3y:usb-serial-for-android:v2.2.2'
+    implementation 'com.github.mik3y:usb-serial-for-android:v2.2.3'
     implementation 'com.squareup.retrofit2:retrofit:2.3.0'
     implementation 'com.squareup.retrofit2:converter-gson:2.3.0'
 
