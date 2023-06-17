@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="ph.chits.rxbox.lifeline">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-feature android:name="android.hardware.usb.host" />
 
@@ -34,6 +33,11 @@
         <activity
             android:name=".MainActivity"
             android:parentActivityName=".SelectPatientActivity" />
+
+        <activity
+            android:name=".MaternalSuite"
+            android:parentActivityName=".MainActivity" />
+
     </application>
 
 </manifest>

@@ -75,6 +75,10 @@ public class Data implements DataListener {
     private final AtomicReference<ObsQuantity<Integer>> heartRate = new AtomicReference<>(new ObsQuantity<Integer>(null, Calendar.getInstance().getTime()));
     private final AtomicReference<ObsQuantity<Float>> temperature = new AtomicReference<>(new ObsQuantity<Float>(null, Calendar.getInstance().getTime()));
 
+    private final AtomicReference<ObsQuantity<Integer>> fetalHeartRate = new AtomicReference<>(new ObsQuantity<Integer>(null, Calendar.getInstance().getTime()));
+    private final AtomicReference<ObsQuantity<Integer>> tocometerPressure = new AtomicReference<>(new ObsQuantity<Integer>(null, Calendar.getInstance().getTime()));
+    private final AtomicReference<ObsQuantity<Boolean>> markPressed = new AtomicReference<>(new ObsQuantity<Boolean>(null, Calendar.getInstance().getTime()));
+
     private final AtomicReference<ObsQuantity<Bp>> bp = new AtomicReference<>(new ObsQuantity<Bp>(new Bp(null, null, null), Calendar.getInstance().getTime()));
     private final AtomicInteger cuffPressure = new AtomicInteger(0);
     private final AtomicInteger bpError = new AtomicInteger(-1);
@@ -158,6 +162,37 @@ public class Data implements DataListener {
         this.bpIdle.set(idle);
     }
 
+    @Override
+    public void setFetalHeartRate(int fhr) {
+        this.fetalHeartRate.set(new ObsQuantity<>(fhr, Calendar.getInstance().getTime()));
+    }
+
+    @Override
+    public void setTocometerPressure(int tmPressure) {
+        this.tocometerPressure.set(new ObsQuantity<>(tmPressure, Calendar.getInstance().getTime()));
+    }
+
+    @Override
+    public void setMarkPressed(boolean pressed) {
+        if (pressed) {
+            this.markPressed.set(new ObsQuantity<>(true, Calendar.getInstance().getTime()));
+        } else {
+            this.markPressed.set(new ObsQuantity<>(false, Calendar.getInstance().getTime()));
+        }
+    }
+
+    public Integer getFetalHeartRate() {
+        return fetalHeartRate.get().getValue();
+    }
+
+    public Integer getTocometerPressure() {
+        return tocometerPressure.get().getValue();
+    }
+
+    public Boolean getMarkPressed() {
+        return markPressed.get().getValue();
+    }
+
     public Integer getHeartRate() {
         return heartRate.get().getValue();
     }
@@ -200,6 +235,18 @@ public class Data implements DataListener {
 
     public boolean isRespirationRateRecent() {
         return respirationRate.get().isRecent();
+    }
+
+    public boolean isFetalHeartRateRecent() {
+        return this.fetalHeartRate.get().isRecent();
+    }
+
+    public boolean isTocometerPressureRecent() {
+        return this.tocometerPressure.get().isRecent();
+    }
+
+    public boolean isMarkPressedRecent() {
+        return this.markPressed.get().isRecent();
     }
 
     public Bp getBloodPressure() {

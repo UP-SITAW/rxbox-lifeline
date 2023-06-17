@@ -1,14 +1,22 @@
-apply plugin: 'com.android.application'
+plugins {
+    id 'com.android.application'
+    id 'com.google.gms.google-services'
+}
 
 android {
     compileSdkVersion 30
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
 
     defaultConfig {
         applicationId "ph.chits.rxbox.lifeline"
         minSdkVersion 21
         targetSdkVersion 30
         versionCode 2
-        versionName "1.24"
+        versionName "1.26-DEBUG"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -19,6 +27,7 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+    namespace 'ph.chits.rxbox.lifeline'
 
 }
 
@@ -26,9 +35,12 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
     //implementation 'com.github.mrnivlac:usb-serial-for-android:v2.2.3'
-    implementation 'com.github.mik3y:usb-serial-for-android:v2.2.2'
+    implementation 'com.github.mik3y:usb-serial-for-android:v2.2.3'
     implementation 'com.squareup.retrofit2:retrofit:2.3.0'
     implementation 'com.squareup.retrofit2:converter-gson:2.3.0'
+
+    implementation platform('com.google.firebase:firebase-bom:31.3.0')
+    implementation 'com.google.firebase:firebase-analytics'
 
     implementation 'androidx.appcompat:appcompat:1.1.0'
     implementation 'androidx.constraintlayout:constraintlayout:1.1.3'

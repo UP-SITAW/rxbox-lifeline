@@ -4,11 +4,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.res.ResourcesCompat;
 
 import com.google.android.material.appbar.MaterialToolbar;
@@ -465,6 +467,27 @@ public class MainActivity extends AppCompatActivity implements Data.Subscriber {
                 navigateUpTo(intent);
             }
         });
+
+        toolbar.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                switch (item.getItemId()) {
+                    case R.id.settings: {
+                        Log.d(TAG, "TESTING SETTING BUTTON");
+                        return true;
+                    }
+                    case R.id.fetalmonitor: {
+                        Intent intent = new Intent(MainActivity.this, MaternalSuite.class);
+                        intent.putExtra("standalone", standaloneMode);
+                        startActivity(intent);
+                        return true;
+                    }
+                    default:
+                        return false;
+                }
+            }
+        });
+
     }
 
     @Override
@@ -488,17 +511,16 @@ public class MainActivity extends AppCompatActivity implements Data.Subscriber {
     }
 
     @Override
-    protected void onPause() {
-        //serial.stopBP();
-
-        super.onPause();
-    }
-
-    @Override
     protected void onStop() {
+        super.onStop();
         cancelFuture();
 
-        super.onStop();
+        try {
+            this.serial.close();
+        } catch (Exception e) {
+            Log.e(TAG, "Cant close RxBox connection", e);
+        }
+
     }
 
     private void cancelFuture() {

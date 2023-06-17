@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bgDarkMonitor">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appbar"
+        android:layout_height="?attr/actionBarSize"
+        android:layout_width="match_parent">
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toco_top_bar"
+        style="@style/Widget.MaterialComponents.Toolbar.Primary"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/bgDarkMonitor"
+        app:layout_anchor="@+id/appbar"
+        app:layout_anchorGravity="center"
+        app:menu="@menu/telemetry_top_menu"
+        app:navigationIcon="@drawable/ic_clear_24px"
+        app:title="PATIENT NAME"
+        app:titleTextAppearance="@style/TitleTextAppearance" />
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/constraintLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="?attr/actionBarSize"
+        android:layout_marginEnd="16dp"
+        app:layout_anchor="@+id/constraintLayout"
+        app:layout_anchorGravity="center">
+
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/guideline"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            app:layout_constraintGuide_begin="260dp" />
+
+        <include
+            android:id="@+id/tile_fetal_heart_rate"
+            layout="@layout/tile_monitor"
+            android:layout_width="225dp"
+            android:layout_height="95dp"
+            android:layout_marginTop="10dp"
+            app:layout_constraintEnd_toStartOf="@+id/guideline"
+            app:layout_constraintHorizontal_bias="0.421"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <include
+            android:id="@+id/tile_fetal_bp"
+            layout="@layout/tile_monitor_bp"
+            android:layout_width="225dp"
+            android:layout_height="161dp"
+            android:layout_marginTop="20dp"
+            app:layout_constraintEnd_toStartOf="@+id/guideline"
+            app:layout_constraintHorizontal_bias="0.388"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tile_fetal_heart_rate" />
+
+        <include
+            android:id="@+id/tile_fetal_pulse_rate"
+            layout="@layout/tile_monitor_secondary"
+            android:layout_width="225dp"
+            android:layout_height="70dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="20dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tile_fetal_bp" />
+
+        <include
+            android:id="@+id/tile_fetal_o2_sat"
+            layout="@layout/tile_monitor_secondary"
+            android:layout_width="225dp"
+            android:layout_height="70dp"
+            android:layout_marginTop="20dp"
+            app:layout_constraintEnd_toStartOf="@+id/guideline"
+            app:layout_constraintHorizontal_bias="0.457"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tile_fetal_pulse_rate" />
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/tile_tocometer"
+            android:layout_width="225dp"
+            android:layout_height="175dp"
+            android:layout_marginTop="20dp"
+            android:layout_marginBottom="50dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/guideline"
+            app:layout_constraintHorizontal_bias="0.457"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tile_fetal_o2_sat"
+            app:layout_constraintVertical_bias="0.09">
+
+            <TextView
+                android:id="@+id/toco_value"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:text="67"
+                android:textAppearance="@style/MonitorPrimaryStats"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.496"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/toco_title" />
+
+            <TextView
+                android:id="@+id/toco_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Uterine Contraction"
+                android:textAppearance="@style/MonitorSecondaryStatsTitle"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <Button
+                android:id="@+id/toco_button"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="139dp"
+                android:layout_height="48dp"
+                android:text="TOCO RESET"
+                android:textColor="@color/neonOthers"
+                app:iconTint="@color/neonOthers"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/toco_value"
+                app:rippleColor="@color/neonOthersTransparent"
+                app:strokeColor="@color/neonOthersTransparent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <FrameLayout
+            android:id="@+id/frame_ctg"
+            android:layout_width="946dp"
+            android:layout_height="728dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="@+id/guideline"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="1.0">
+
+        </FrameLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
