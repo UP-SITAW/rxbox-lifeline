@@ -29,4 +29,6 @@ public interface DataListener {
 
     void setMarkPressed(boolean pressed);
 
+    void setFetalMonitorUpdate(Integer fhr, Integer tmPressure, Boolean pressed);
+
 }

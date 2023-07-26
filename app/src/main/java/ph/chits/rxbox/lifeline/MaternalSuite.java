@@ -3,10 +3,12 @@ package ph.chits.rxbox.lifeline;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Canvas;
 import android.os.Bundle;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
 
@@ -27,6 +29,8 @@ import ph.chits.rxbox.lifeline.hardware.BpState;
 import ph.chits.rxbox.lifeline.hardware.Data;
 import ph.chits.rxbox.lifeline.hardware.Serial;
 import ph.chits.rxbox.lifeline.model.Patient;
+import ph.chits.rxbox.lifeline.model.SensorData;
+import ph.chits.rxbox.lifeline.model.SensorDataImpl;
 import ph.chits.rxbox.lifeline.rest.FhirService;
 import ph.chits.rxbox.lifeline.rest.ObservationBp;
 import ph.chits.rxbox.lifeline.rest.ObservationQuantity;
@@ -47,6 +51,11 @@ public class MaternalSuite extends AppCompatActivity implements Data.Subscriber 
     private Patient patient = null;
     private static BpState bpState = BpState.IDLE;
     private Integer bpRequestId = null;
+
+    private CTGTrace ctgTrace;
+    private SensorData<Integer> fhr;
+    private SensorData<Integer> pressure;
+    private SensorData<Boolean> mark;
 
     private Future uiUpdateThread;
     private Future serverUpdateThread;
@@ -95,6 +104,9 @@ public class MaternalSuite extends AppCompatActivity implements Data.Subscriber 
         toolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                if (ctgTrace.isRunning()) {
+                    ctgTrace.stop();
+                }
                 Intent intent = new Intent(MaternalSuite.this, SelectPatientActivity.class);
                 navigateUpTo(intent);
             }
@@ -147,6 +159,7 @@ public class MaternalSuite extends AppCompatActivity implements Data.Subscriber 
 
         initializeTileBp();
         initializeToco();
+        initializeGraph();
 
     }
 
@@ -214,6 +227,35 @@ public class MaternalSuite extends AppCompatActivity implements Data.Subscriber 
         });
     }
 
+    private void initializeGraph() {
+
+        this.fhr = new SensorDataImpl<Integer>() {};
+        this.pressure = new SensorDataImpl<Integer>() {};
+        this.mark = new SensorDataImpl<Boolean>() {};
+        ViewGroup frameCtg = (ViewGroup) findViewById(R.id.frame_ctg);
+        this.ctgTrace = new CTGTrace(this, this.fhr, this.pressure, this.mark);
+        ctgTrace.setScreenDensity(getResources().getDisplayMetrics().density);
+        frameCtg.addView(ctgTrace);
+
+        Button startCTG = findViewById(R.id.control_start_ctg);
+        Button stopCTG = findViewById(R.id.control_stop_ctg);
+        startCTG.setEnabled(true);
+        stopCTG.setEnabled(false);
+
+        startCTG.setOnClickListener(view -> {
+            new Thread(ctgTrace).start();
+            stopCTG.setEnabled(true);
+            startCTG.setEnabled(false);
+        });
+
+        stopCTG.setOnClickListener(view -> {
+            ctgTrace.stop();
+            stopCTG.setEnabled(false);
+            startCTG.setEnabled(true);
+        });
+
+    }
+
     @Override
     public void bpResult(Data.Bp bp, Date date) {
         Log.d(TAG, "starting to send bp");
@@ -263,6 +305,19 @@ public class MaternalSuite extends AppCompatActivity implements Data.Subscriber 
         } catch (Exception e) {
             e.printStackTrace();
             bpRequestId = null;
+        }
+    }
+
+    @Override
+    public void fetalMonitorUpdate(Integer fhr, Integer tocoPressure, Boolean mark) {
+        if (fhr != null && this.fhr != null) {
+            this.fhr.addData(fhr);
+        }
+        if (tocoPressure != null && this.pressure != null) {
+            this.pressure.addData(tocoPressure);
+        }
+        if (mark != null && this.mark != null) {
+            this.mark.addData(mark);
         }
     }
 
