@@ -175,11 +175,7 @@ public class Data implements DataListener {
 
     @Override
     public void setMarkPressed(boolean pressed) {
-        if (pressed) {
-            this.markPressed.set(new ObsQuantity<>(true, Calendar.getInstance().getTime()));
-        } else {
-            this.markPressed.set(new ObsQuantity<>(false, Calendar.getInstance().getTime()));
-        }
+        this.markPressed.set(new ObsQuantity<>(pressed, Calendar.getInstance().getTime()));
     }
 
     public Integer getFetalHeartRate() {
