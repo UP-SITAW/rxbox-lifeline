@@ -65,6 +65,7 @@ public class Data implements DataListener {
 
     public static interface Subscriber {
         void bpResult(Bp bp, Date date);
+        void fetalMonitorUpdate(Integer fhr, Integer tocoPressure, Boolean mark);
     }
 
     private final String TAG = this.getClass().getSimpleName();
@@ -174,11 +175,7 @@ public class Data implements DataListener {
 
     @Override
     public void setMarkPressed(boolean pressed) {
-        if (pressed) {
-            this.markPressed.set(new ObsQuantity<>(true, Calendar.getInstance().getTime()));
-        } else {
-            this.markPressed.set(new ObsQuantity<>(false, Calendar.getInstance().getTime()));
-        }
+        this.markPressed.set(new ObsQuantity<>(pressed, Calendar.getInstance().getTime()));
     }
 
     public Integer getFetalHeartRate() {
@@ -265,4 +262,10 @@ public class Data implements DataListener {
         return bpIdle.get();
     }
 
+    @Override
+    public void setFetalMonitorUpdate(Integer fhr, Integer tmPressure, Boolean pressed) {
+        if (subscriber != null) {
+            subscriber.fetalMonitorUpdate(fhr, tmPressure, pressed);
+        }
+    }
 }

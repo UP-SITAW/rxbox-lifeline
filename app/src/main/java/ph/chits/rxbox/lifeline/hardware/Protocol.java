@@ -2,6 +2,8 @@ package ph.chits.rxbox.lifeline.hardware;
 
 import com.hoho.android.usbserial.driver.UsbSerialPort;
 
+import ph.chits.rxbox.lifeline.hardware.parser.ProtocolID;
+
 public class Protocol {
     public static final class Serial {
         public static final int BAUDRATE = 250000;
@@ -61,26 +63,6 @@ public class Protocol {
     public final static char FM_VOLUME_6 = 'S';
     public final static char FM_VOLUME_7 = 'T';
 
-    public final static int ID_ECG_WAVEFORM_I_II_V1_RESP = 0x01;
-    public final static int ID_ECG_WAVEFORM_I_II_V1 = 0x02;
-    public final static int ID_ECG_WAVEFORM_V2_TO_V6 = 0x12;
-    public final static int ID_ECG_HEART_RATE_RESPIRATION_RATE = 0x04;
-    public final static int ID_ECG_LEAD_CONNECTIONS_INFO_1 = 0x09;
-    public final static int ID_ECG_LEAD_CONNECTIONS_INFO_2 = 0x13;
-    public final static int ID_ECG_BOARD_RESET = 0x0E;
-    public final static int ID_ECG_TEMPERATURE_AND_PROBE = 0x11;
-
-    public final static int ID_PULSE_OXIMETER = 0x21;
-
-    public final static int ID_BP_CUFF_TX_2 = 0x32;
-    public final static int ID_BP_END_CUFF_TX = 0x33;
-    public final static int ID_BP_PART_1 = 0x34;
-    public final static int ID_BP_STATUS_2 = 0x35;
-    public final static int ID_BP_STATUS_3 = 0x36;
-    public final static int ID_BP_STATUS_4 = 0x37;
-    public final static int ID_BP_STATUS_5 = 0x38;
-    public final static int ID_BP_STATUS_6 = 0x39;
-
     public final static int ID_FM = 0x40;
 
     public final static char[] SET_ECG_DEFAULTS = {
@@ -95,45 +77,14 @@ public class Protocol {
         return (r & 0x80) == 0x00; // byte is identifier if bit 7 is 0
     }
 
-    public static int lengthOfPacket(int packet_id) {
-        switch (packet_id) {
-            case ID_ECG_WAVEFORM_I_II_V1_RESP:
-            case ID_ECG_TEMPERATURE_AND_PROBE:
-            case ID_ECG_WAVEFORM_V2_TO_V6:
-            case ID_PULSE_OXIMETER:
-            case ID_BP_END_CUFF_TX:
-                return 7;
-            case ID_ECG_WAVEFORM_I_II_V1:
-            case ID_ECG_HEART_RATE_RESPIRATION_RATE:
-                return 6;
-            case ID_ECG_LEAD_CONNECTIONS_INFO_1:
-            case ID_ECG_LEAD_CONNECTIONS_INFO_2:
-                return 3;
-            case ID_ECG_BOARD_RESET:
-                return 1;
-            case ID_BP_CUFF_TX_2:
-                return 4;
-            case ID_BP_PART_1:
-            case ID_BP_STATUS_2:
-            case ID_BP_STATUS_3:
-            case ID_BP_STATUS_4:
-            case ID_BP_STATUS_5:
-                return 9;
-            case ID_BP_STATUS_6:
-            case ID_FM:
-                return 8;
-            default:
-                return 0;
-        }
-    }
-
     public static boolean readBit(int input, int bit_number) {
         int detector = 0x01 << bit_number;
         return (input & detector) == detector;
     }
 
     public static void restoreBitSeven(int[] array) {
-        int length = lengthOfPacket(array[0]);
+        ProtocolID protocolID = ProtocolID.get(array[0]);
+        int length = protocolID != null ? protocolID.getLength() : 0;
         for (int i = 2; i < length; i++) {
             if (!readBit(array[1], i - 2)) {
                 array[i] &= ~0x80;

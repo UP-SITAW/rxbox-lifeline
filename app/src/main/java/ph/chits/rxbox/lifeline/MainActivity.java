@@ -423,6 +423,11 @@ public class MainActivity extends AppCompatActivity implements Data.Subscriber {
     }
 
     @Override
+    public void fetalMonitorUpdate(Integer fhr, Integer tocoPressure, Boolean mark) {
+        // do nothing
+    }
+
+    @Override
     protected void onCreate(android.os.Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
